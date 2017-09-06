@@ -35,8 +35,15 @@ float fShootDistance(int bone){
             return 1;
     }
 }
+Vector BonePos(unsigned long m_pStudioBonesPtr, int bone, remote::Handle &csgo){
+  BoneMatrix bones;
+  Vector vecReturn;
+  csgo.Read((void*)m_pStudioBonesPtr+bone*sizeof(BoneMatrix),&bones,sizeof(BoneMatrix));
+  vecReturn = {bones.x,bones.y,bones.z};
+  return vecReturn;
+}
 
-Vector WorldToScreen_(Vector &camerapos,Vector &enemy, QAngle &myvang, float FOV)
+Vector WorldToScreen_(const Vector &camerapos,const Vector &enemy, const QAngle &myvang, float FOV)
 {
     Vector point(enemy.x, enemy.z,enemy.y);
     Vector newCameraPos(camerapos.x,camerapos.z,camerapos.y);
@@ -49,7 +56,7 @@ Vector WorldToScreen_(Vector &camerapos,Vector &enemy, QAngle &myvang, float FOV
      magical = 1.224489796;
     }
     else if(FOV>=110&&FOV<130){
-        magical = 1.15;
+        magical = 1.18;
     }
     else{
      magical=1.3;
@@ -179,6 +186,27 @@ QAngle calcAngle(Vector* source, Vector* target){
     }
     return angle;
 }
+Vector AimLine(QAngle &angle, const Vector &pos){
+    Vector AimingAt;
+    //std::cout<<" angle x: "<<angle.x<<" angle y: "<<angle.y<<std::endl;
+    angle.y-=90;//rotate the plane by 90 degrees because 0 deg is the x axis
+    float length = 60 ;
+    float sinX = sinf(M_PI/180*angle.x);
+    float cosY = cosf(M_PI/180*angle.y);
+    float sinY = sinf(M_PI/180*angle.y);
+    AimingAt=pos;
+    AimingAt.x+=(length*-sinY);
+    AimingAt.y+=(length*+cosY);
+
+    if(angle.x>0){
+      AimingAt.z+=(length*-sinX);
+    }
+    else{
+      AimingAt.z+=(length*sinX);
+    }
+    return AimingAt;
+}
+
 Vector RecoilCrosshair(QAngle &vpunch, float FOV){
     Vector crosshair;
     float xDelta = (tanf( (vpunch.y / 2) * M_PI/180) / tanf( (FOV / 2) * M_PI/180))*settings::window::wind_width;//x delta takes the y vpunch because it is yaw

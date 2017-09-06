@@ -104,6 +104,7 @@ void qWindow::paintEvent(QPaintEvent *)
             }
             //qInfo() << "positions[i].x "<<positions[i].second.x<<" positions[i].y "<<positions[i].second.y;
             painter.drawRect(entitiesToScreen[i].origin.x-fwidth/2,entitiesToScreen[i].origin.y,fwidth,fheight);
+            painter.drawLine(entitiesToScreen[i].aimLine.x, entitiesToScreen[i].aimLine.y, entitiesToScreen[i].eyes.x, entitiesToScreen[i].eyes.y);
             pen.setColor(QColor(h.Colors()[20],h.Colors()[21],h.Colors()[22],h.Colors()[23]));
             painter.setPen(pen);
             font.setBold(true);

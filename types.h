@@ -538,6 +538,8 @@ struct EntityInfo{
 struct EntityToScreen{
     Vector head;
     Vector origin;
+    Vector eyes;
+    Vector aimLine;
     EntityInfo entityInfo;
     //string name;
     int health;

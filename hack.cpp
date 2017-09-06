@@ -152,6 +152,7 @@ bool hack::getWorldToScreenData(std::array<EntityToScreen,64> &output, Vector &r
     //get position and account for view offset (crouching or standing)
     myActualPos = myEnt.m_vecNetworkOrigin;
     myActualPos.z += myEnt.m_vecViewOffset.z;
+
     for (int i = 0;i<64;i++){
         if(entitiesForScreen[i].entity.m_iHealth<=0||entitiesForScreen[i].entity.m_bDormant||entitiesForScreen[i].entity.ID==specEnt.ID||entitiesForScreen[i].entityPtr==0){
             continue;
@@ -159,7 +160,13 @@ bool hack::getWorldToScreenData(std::array<EntityToScreen,64> &output, Vector &r
         //cout<<"found one #"<<i<<endl;
         Vector vecScreenOrigin(-99999,-99999,-99999);
         Vector vecScreenHeight(-99999,-99999,-99999);
+        Vector vecAimLine(-99999,-99999,-99999);
+        Vector vecScreenEyes(-99999,-99999,-99999);
+        Vector eyes(-99999,-99999,-99999);
         Vector height = entitiesForScreen[i].entity.m_vecAbsOrigin;
+        unsigned long m_pStudioBones = 0;
+        csgo.Read((void*)entitiesForScreen[i].entityPtr+offsets::m_pStudioBones,&m_pStudioBones,sizeof(long));
+        eyes = helper::BonePos(m_pStudioBones,8,csgo);
         /*if(entitiesForScreen[i].entity.m_fFlags&IN_DUCK)
         {
             height.z+=50;
@@ -170,9 +177,13 @@ bool hack::getWorldToScreenData(std::array<EntityToScreen,64> &output, Vector &r
         //}
         vecScreenOrigin = helper::WorldToScreen_( myActualPos, entitiesForScreen[i].entity.m_vecAbsOrigin,myTotalAng, float(FOV));
         vecScreenHeight = helper::WorldToScreen_( myActualPos,height,myTotalAng, float(FOV));
+        vecAimLine = helper::WorldToScreen_( myActualPos, helper::AimLine(entitiesForScreen[i].entity.m_angNetworkAngles, eyes), myTotalAng, float(FOV));
+        vecScreenEyes = helper::WorldToScreen_(myActualPos,eyes,myTotalAng,float(FOV));
         if(vecScreenOrigin.x!=-99999&&vecScreenHeight.x!=-99999){
             output[i].origin=vecScreenOrigin;
             output[i].head=vecScreenHeight;
+            output[i].aimLine = vecAimLine;
+            output[i].eyes = vecScreenEyes;
         }
         uint8_t isScoped = 0;
         uint8_t isDefusing = 0;
@@ -294,8 +305,8 @@ void hack::aim(){
                     &&(entitiesCopy[i].entity.m_iHealth>0)
                     &&(entitiesCopy[i].entity.ID!=myEnt.ID)
                     &&(lifeState==LIFE_ALIVE)){//if the ent isn't on our team, if they are not dormant, if their health is greater than 0, if they are not us, if they are alive...
-                void* m_pStudioBones;
-                int closestBone;
+                void* m_pStudioBones = 0;
+                int closestBone = 0;
                 /*float lby;
                 csgo.Read((void*)entPtr+offsets::m_flLowerBodyYawTarget,&lby,sizeof(float));
                 //auto b-aim
