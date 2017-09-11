@@ -15,6 +15,7 @@ unsigned int offsets::m_iFOVStart = 0x399c;//default fov
 unsigned int offsets::m_viewPunchAngle = 0x3758; //Vector m_viewPunchAngle; // 0x3758
 unsigned int offsets::m_hObserverTarget = 0x3b54;//unsigned long long m_hObserverTarget; // 0x3B54
 unsigned int offsets::m_iObserveCamType = 0x3b50; //int 4 1st person, 5 3rd person, 6 free cam
+unsigned int offsets::m_angEyeAngles = 0xBB34;
 
 
 
@@ -127,6 +128,17 @@ bool hack::getWorldToScreenData(std::array<EntityToScreen,64> &output, Vector &r
             specEnt = entitiesForScreen[hObserverTarget].entity;
             rcsCross = helper::RecoilCrosshair(aimpunch,FOV);
         }
+        else{
+            rcsCross = Vector(-99999,-99999,-99999);
+            csgo.Read((void*)localPlayer+offsets::m_iFOV, &FOV, sizeof(int));
+            csgo.Read((void*)localPlayer+offsets::m_iFOVStart, &FOVStart, sizeof(int));
+            if (FOV==0&&FOVStart!=0){
+                FOV=FOVStart;
+            }
+            csgo.Read((void*)localPlayer+offsets::m_aimPunchAngle,&aimpunch,sizeof(QAngle));
+            csgo.Read((void*)localPlayer+offsets::m_viewPunchAngle,&viewpunch,sizeof(QAngle));
+            specEnt = myEnt;
+        }
 
     }
     else if(observeCamType==2||observeCamType==1){
@@ -164,9 +176,12 @@ bool hack::getWorldToScreenData(std::array<EntityToScreen,64> &output, Vector &r
         Vector vecScreenEyes(-99999,-99999,-99999);
         Vector eyes(-99999,-99999,-99999);
         Vector height = entitiesForScreen[i].entity.m_vecAbsOrigin;
+        QAngle entEyeAngles;
+        csgo.Read((void*)entitiesForScreen[i].entityPtr+offsets::m_angEyeAngles,&entEyeAngles,sizeof(QAngle));
         unsigned long m_pStudioBones = 0;
         csgo.Read((void*)entitiesForScreen[i].entityPtr+offsets::m_pStudioBones,&m_pStudioBones,sizeof(long));
         eyes = helper::BonePos(m_pStudioBones,8,csgo);
+        //cout<<entitiesForScreen[i].entityPtr<<endl;
         /*if(entitiesForScreen[i].entity.m_fFlags&IN_DUCK)
         {
             height.z+=50;
@@ -177,7 +192,7 @@ bool hack::getWorldToScreenData(std::array<EntityToScreen,64> &output, Vector &r
         //}
         vecScreenOrigin = helper::WorldToScreen_( myActualPos, entitiesForScreen[i].entity.m_vecAbsOrigin,myTotalAng, float(FOV));
         vecScreenHeight = helper::WorldToScreen_( myActualPos,height,myTotalAng, float(FOV));
-        vecAimLine = helper::WorldToScreen_( myActualPos, helper::AimLine(entitiesForScreen[i].entity.m_angNetworkAngles, eyes), myTotalAng, float(FOV));
+        vecAimLine = helper::WorldToScreen_( myActualPos, helper::AimLine(entEyeAngles, eyes), myTotalAng, float(FOV));
         vecScreenEyes = helper::WorldToScreen_(myActualPos,eyes,myTotalAng,float(FOV));
         if(vecScreenOrigin.x!=-99999&&vecScreenHeight.x!=-99999){
             output[i].origin=vecScreenOrigin;
